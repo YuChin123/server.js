@@ -62,7 +62,16 @@ router.route('/places')
 			res.send(err);
 		res.json({ message: 'Successfully deleted' });
 	});
-});
+})
+
+.get(function(req, res) {
+	Place.find(function(err, place) {
+		if (err)
+			res.send(err);
+		res.json(place);
+	});
+})
+
 
 router.route('/places/:place_id')
 .get(function(req, res) {
@@ -85,15 +94,6 @@ router.route('/places/:place_id')
 })
 
 
-.delete(function(req, res) {
-	Place.remove({
-		_id: req.params.place_id
-	}, function(err, place) {
-		if (err)
-			res.send(err);
-		res.json({ message: 'Successfully deleted' });
-	});
-});
 
 
 //review 
@@ -123,13 +123,27 @@ place.save(function(err) {
 	res.json({ message: 'Review added!' });
 })
 })
+
 })
+
 .get(function(req, res) {
 	Place.findById(req.params.place_id, function(err, place) {
 		if (err)
 			res.send(err)
 		res.json(place.reviews)
 	})
+})
+
+router.route('/topfiveplaces')
+.get(function(req,res){
+	places.find()
+.limit(5)
+.sort({avgRating:'-1'})
+.exec(function(err,places){
+	if (err)
+		res.send(err);
+	res.json(places);
+})
 })
 
 
