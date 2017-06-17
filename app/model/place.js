@@ -15,6 +15,22 @@ var review = new Schema ({
 
 })
 
+var price = new Schema({
+	price: Number,
+	discountedPrice: Number,
+	Discount : {type: Boolean, default: false}
+})
+
+var products = new Schema ({
+	name: String, 
+	description: String,
+	image_url: String,
+	price: {type:Number, default:0},
+	reviews: [review],
+	avgRating: Number,
+	price: {type:Number, default:0},
+})
+
 var places = new Schema ({ 
 	name : String,
 	address : String, 
@@ -23,7 +39,10 @@ var places = new Schema ({
 	avgRating: {type:Number, default:0},
 	rating: [review],
 	openingHour: [openingTimes],
+	dateAdded: {type:Date, default: Date.now},
+	products: [products],
 })
+
 
 
 module.exports = mongoose.model('Place',places)

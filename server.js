@@ -2,7 +2,13 @@
 var express = require('express'); // call express
 var app = express(); // define our app using express
 var bodyParser = require('body-parser');
+
+var User = require('./app/model/user.js');
 var Place = require('./app/model/place.js'); 
+
+var passport = require('passport')
+var authController = require('./controllers/auth.js')
+var placeController = require ('./controllers/place.js')
 
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://ADA_yc:ADAyc@ds161041.mlab.com:61041/ada')
@@ -13,137 +19,72 @@ app.use(bodyParser.json());
 var port = process.env.PORT || 8080; // set our port
 var router = express.Router();
 router.get('/', function(req, res) {
-	res.json({ message: 'hooray! welcome to our api!' });
+	res.json({ message: 'hooray! welcome to our api!' });  
 });
 
 
 router.route('/places')
-.post(function(req, res) {
-	var place = new Place();
-	place.name = req.body.name;
-	place.address = req.body.address;
-	place.coordinates = [req.body.latitude, req.body.longtitude];
-	place.facilities = [req.body.facilities];
-	place.avgRating = req.body.avgRating;
-	place.rating = req.body.rating;
-
-	//review
-	var review = {
-		user: req.body.reviewer, 
-		message: req.body.message ,
-		vote: req.body.vote, 
-	}
-
-	//opening time
-	var openingTime ={
-		day: req.body.day,
-		time: req.body.time,
-		//complete logic close 
-		close: req.body.closed,
-
-	}
-
-	place.openingHour = [openingTime]; 
-
-	place.save(function(err) {
-		if (err)
-			res.send(err);
-		res.json({ message: 'Place created!' });
-	});
-
-})
-
-
-.delete(function(req, res) {
-	Place.remove({
-		_id: req.params.place_id
-	}, function(err, place) {
-		if (err)
-			res.send(err);
-		res.json({ message: 'Successfully deleted' });
-	});
-})
-
-.get(function(req, res) {
-	Place.find(function(err, place) {
-		if (err)
-			res.send(err);
-		res.json(place);
-	});
-})
+.post(authController.isAuthenticated, placeController.postPlaces)
+.delete(authController.isAuthenticated, placeController.deletePlaces)
+.get(placeController.getPlaces)
 
 
 router.route('/places/:place_id')
-.get(function(req, res) {
-	Place.findById(req.params.place_id, function(err, place) {
-		if (err)
-			res.send(err);
-		res.json(place);
-	});
-})
-
-
-.delete(function(req, res) {
-	Place.remove({
-		_id: req.params.place_id
-	}, function(err, place) {
-		if (err)
-			res.send(err);
-		res.json({ message: 'Successfully deleted' });
-	});
-})
-
-
-
+.get(placeController.getPlace)
+.delete(placeController.deletePlace)
 
 //review 
 
 router.route('/places/:place_id/reviews')
-.post(function(req, res) {
-	Place.findById(req.params.place_id, function(err, place) {
+.post(placeController.postReview)
+
+
+//review 
+
+router.route('/places/:place_id/products')
+.post(placeController.postProducts)
+.get(placeController.getProducts)
+
+
+router.route('/topfiveplaces')
+.get(placeController.topFivePlaces)
+
+
+router.route('/latestplace')
+.get(placeController.latestplace)
+
+router.route('/search/place/:place_query')
+.get(placeController.searchplace)
+
+
+
+
+
+router.route('/login')
+.post(function(req,res){
+	User.find()
+	.where('username').equals(req.body.username)
+	.where('password').equals(req.body.password)
+	.exec(function(err,user){
+		
 		if (err)
 			res.send(err);
-		var newReview = {
-			user : req.body.username,
-			vote : req.body.vote,
-			message : req.body.reviewText, 
-		}
-// save the review
+		res.json(user)
 
-
-var totalRating = place.avgRating * place.rating.length 
-
-place.avgRating = (parseInt(totalRating) + parseInt(newReview.vote)) / (place.rating.length + 1)
- 
- place.rating.push(newReview)
-
-place.save(function(err) {
-	if (err)
-		res.send(err);
-	res.json({ message: 'Review added!' });
-})
-})
-
-})
-
-.get(function(req, res) {
-	Place.findById(req.params.place_id, function(err, place) {
-		if (err)
-			res.send(err)
-		res.json(place.reviews)
 	})
 })
 
-router.route('/topfiveplaces')
-.get(function(req,res){
-	places.find()
-.limit(5)
-.sort({avgRating:'-1'})
-.exec(function(err,places){
-	if (err)
-		res.send(err);
-	res.json(places);
-})
+router.route('/register')
+.post(function(req,res){
+	var user = new User();
+	user.username = req.body.username;
+	user.password = req.body.password
+	user.save(function(err){
+		if (err) 
+			res.send(err);
+
+		res.json({message: 'User created!' });
+	});
 })
 
 
